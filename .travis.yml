@@ -1,0 +1,33 @@
+os: linux
+dist: xenial
+sudo: true
+
+# The python from travis is used to lint, mypy and test the
+# non-transpiled src/, as well as to build the universal wheel
+# that will be tested using the environments set up using conda
+python:
+  - "3.7"
+  - "3.6"
+
+language: python
+cache: pip
+
+install:
+  - python -m pip install $(cat requirements-test.txt)
+
+script:
+  # lint
+  - python -m flake8 src/myenv/
+  - MYPYPATH=stubs/ python -m mypy src/myenv/
+  # doc
+  - rst2html5 --strict README.rst > /dev/null
+  - rst2html5 --strict CHANGELOG.rst > /dev/null
+  # test repo src/
+  - PYTHONPATH=src/:$PYTHONPATH python -m pytest --cov=myenv test/
+  - codecov
+  # build wheel
+  - python setup.py bdist_wheel --python-tag=py36.py37
+  - ls -l dist/*
+  # test wheel
+  - python -m pip install $(ls -1t dist/*.whl | head -n 1)
+  - python -m pytest --cov=myenv test/
