@@ -1,34 +1,5 @@
-MyENV: MyPy based Environment Variable Parsing
+MyENV: Environment Variable Parsing with Types
 ==============================================
-
-MyENV parses you're environment variables using types
-and defaults declared with ``typing.NamedTuple``.
-
-.. code-block:: python
-
-    import myenv
-    import dblib
-
-    class DBEnv(myenv.BaseEnv):
-
-        host      : str  = "127.0.0.1"
-        port      : int  = 5432
-        name      : str  = "app_db_v1"
-        user      : str  = "myuser"
-        password  : str
-        read_only : bool = True
-
-    # parse from os.environ
-    dbenv = myenv.parse(DBEnv)
-
-    conn = dblib.connect(
-        dbname=dbenv.name,
-        user=dbenv.user,
-        password=dbenv.password,
-        port=dbenv.port,
-        read_only=dbenv.read_only,
-    )
-
 
 .. start-badges
 
@@ -72,3 +43,31 @@ and defaults declared with ``typing.NamedTuple``.
     :target: https://pypi.python.org/pypi/myenv
     :alt: Supported Python Versions
 
+
+MyENV parses you're environment variables using types
+and defaults declared like this:
+
+.. code-block:: python
+
+    import myenv
+    import dblib
+
+    class DBEnv(myenv.BaseEnv):
+
+        host      : str  = "127.0.0.1"
+        port      : int  = 5432
+        name      : str  = "app_db_v1"
+        user      : str  = "myuser"
+        password  : str
+        read_only : bool = True
+
+    # parse from os.environ
+    dbenv = myenv.parse(DBEnv)
+
+    conn = dblib.connect(
+        dbname=dbenv.name,
+        user=dbenv.user,
+        password=dbenv.password,
+        port=dbenv.port,
+        read_only=dbenv.read_only,
+    )
