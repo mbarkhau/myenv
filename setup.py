@@ -9,7 +9,7 @@ import setuptools
 
 
 def project_path(filename):
-    return pathlib.Path(__file__).parent.absolute()
+    return (pathlib.Path(__file__).parent / filename).absolute()
 
 
 def read(filename):
@@ -17,11 +17,7 @@ def read(filename):
         return fh.read()
 
 
-long_description = (
-    read("README.rst") +
-    "\n\n" +
-    read("CHANGELOG.rst")
-)
+long_description = read("README.rst") + "\n\n" + read("CHANGELOG.rst")
 
 
 setuptools.setup(
@@ -31,11 +27,9 @@ setuptools.setup(
     author_email="mbarkhau@gmail.com",
     url="https://github.com/mbarkhau/myenv",
     version="201809.1b0",
-
     description="Environment Variables",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-
     packages=["myenv"],
     package_dir={"": "src"},
     zip_safe=True,
