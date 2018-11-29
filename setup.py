@@ -1,40 +1,47 @@
 # This file is part of the myenv project
-# https://github.com/mbarkhau/myenv
+# https://gitlab.com/mbarkhau/myenv
 #
-# (C) 2018 Manuel Barkhau (mbarkhau@gmail.com)
+# Copyright (c) 2018 Manuel Barkhau (@mbarkhau) - MIT License
 # SPDX-License-Identifier: MIT
 
-import pathlib
+import os
 import setuptools
 
 
-def project_path(filename):
-    return (pathlib.Path(__file__).parent / filename).absolute()
+def project_path(*sub_paths):
+    project_dirpath = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(project_dirpath, *sub_paths)
 
 
-def read(filename):
-    with project_path(filename).open(mode="r") as fh:
-        return fh.read()
+def read(*sub_paths):
+    with open(project_path(*sub_paths), mode="rb") as fh:
+        return fh.read().decode("utf-8")
 
 
-long_description = read("README.rst") + "\n\n" + read("CHANGELOG.rst")
+install_requires = [
+    line.strip()
+    for line in read("requirements", "pypi.txt").splitlines()
+    if line.strip() and not line.startswith("#")
+]
+
+
+long_description = "\n\n".join((read("README.md"), read("CONTRIBUTING.md"), read("CHANGELOG.md")))
 
 
 setuptools.setup(
     name="myenv",
     license="MIT",
     author="Manuel Barkhau",
-    author_email="mbarkhau@gmail.com",
-    url="https://github.com/mbarkhau/myenv",
-    version="201809.2b0",
-
+    author_email="@mbarkhau",
+    url="https://gitlab.com/mbarkhau/myenv",
+    version="201811.1a0",
     keywords="environ variables mypy config configuration",
-    description="Environment Variable Parsing with Types",
+    description="Environment Variable Parsing with type annotations.",
     long_description=long_description,
-    long_description_content_type="text/x-rst",
-
+    long_description_content_type="text/markdown",
     packages=["myenv"],
     package_dir={"": "src"},
+    install_requires=install_requires,
     python_requires=">=3.6",
     zip_safe=True,
     classifiers=[
