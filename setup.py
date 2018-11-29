@@ -26,12 +26,16 @@ setuptools.setup(
     author="Manuel Barkhau",
     author_email="mbarkhau@gmail.com",
     url="https://github.com/mbarkhau/myenv",
-    version="201809.1b0",
-    description="Environment Variables",
+    version="201809.2b0",
+
+    keywords="environ variables mypy config configuration",
+    description="Environment Variable Parsing with Types",
     long_description=long_description,
     long_description_content_type="text/x-rst",
+
     packages=["myenv"],
     package_dir={"": "src"},
+    python_requires=">=3.6",
     zip_safe=True,
     classifiers=[
         "Development Status :: 4 - Beta",

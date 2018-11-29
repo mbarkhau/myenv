@@ -4,3 +4,4 @@ twine
 ipython
 pudb
 py-spy
+pycalver

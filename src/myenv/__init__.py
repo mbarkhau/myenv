@@ -9,10 +9,17 @@ import typing as typ
 import pathlib as pl
 
 
+__version__ = "v201809.0002-beta"
+
+
 class BaseEnv:
+
     def __init__(self, **kwargs):
         for key, val in kwargs.items():
             setattr(self, key, val)
+
+    def _asdict(self):
+        pass
 
 
 __default_sentinel__ = '__default_sentinel__'
@@ -48,11 +55,35 @@ def parse_val(val: str, ftype: typ.Any) -> typ.Any:
         return float(val)
     elif ftype == pl.Path:
         return pl.Path(val)
-    elif ftype._name == 'List':
-        if ftype.__args__ == (pl.Path,):
-            return [pl.Path(pathstr) for pathstr in val.split(os.pathsep)]
-        elif ftype.__args__ == (str,):
-            return [pathstr for pathstr in val.split(os.pathsep)]
+    elif ftype._name in ('List', 'Set'):
+        list_strvals = [strval for strval in val.split(os.pathsep)]
+        if ftype.__args__ == (str,):
+            list_val = list_strvals
+        elif ftype.__args__ == (pl.Path,):
+            list_val = [pl.Path(listval) for listval in list_strvals]
+        elif ftype.__args__ == (int,):
+            list_val = [int(listval, 10) for listval in list_strvals]
+        elif ftype.__args__ == (float,):
+            list_val = [float(listval) for listval in list_strvals]
+        elif ftype.__args__ == (bool,):
+            list_val = []
+            for listval in list_strvals:
+                if listval.lower() in ("1", "true"):
+                    list_val.append(True)
+                elif listval.lower() in ("0", "false"):
+                    list_val.append(False)
+                else:
+                    raise ValueError(listval)
+        else:
+            raise TypeError(ftype)
+
+        if ftype._name == 'List':
+            return list_val
+        elif ftype._name == 'Set':
+            return set(list_val)
+        else:
+            # This cannot happen
+            raise TypeError(ftype)
     elif callable(ftype):
         return ftype(val)
     else:
@@ -63,8 +94,9 @@ def parse(
     env_type: typ.Type[EnvType], environ: Environ = os.environ, prefix: str = None
 ) -> EnvType:
     if prefix is None:
-        prefix = ""
+        prefix = getattr(env_type, '_environ_prefix', "")
 
+    typename = env_type.__name__
     kwargs: typ.MutableMapping[str, typ.Any] = {}
     for fname, env_key, ftype, default in iter_fields(env_type, prefix):
         if env_key in environ:
@@ -73,13 +105,11 @@ def parse(
                 kwargs[fname] = parse_val(raw_env_val, ftype)
             except ValueError as err:
                 raise ValueError(
-                    f"Invalid value '{raw_env_val}' for {env_key}."
-                    f"attepmted to parse with '{ftype}'."
+                    f"Invalid value '{raw_env_val}' for {env_key}. "
+                    f"Attepmted to parse '{typename}.{fname}' with '{ftype}'."
                 )
         elif default != __default_sentinel__:
             kwargs[fname] = default
         else:
-            raise KeyError(
-                f"No environment variable {env_key} found for field {env_type.__name__}.{fname}"
-            )
+            raise KeyError(f"No environment variable {env_key} found for field {typename}.{fname}")
     return env_type(**kwargs)

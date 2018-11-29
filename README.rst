@@ -31,7 +31,7 @@ MyENV: Environment Variable Parsing with Types
     :target: https://github.com/mbarkhau/myenv/blob/master/CHANGELOG.rst
     :alt: PyPI Version
 
-.. |version| image:: https://img.shields.io/badge/CalVer-v201809.0001--beta-blue.svg
+.. |version| image:: https://img.shields.io/badge/CalVer-v201809.0002--beta-blue.svg
     :target: https://calver.org/
     :alt: CalVer v201809.0002-beta
 
