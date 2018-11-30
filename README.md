@@ -162,7 +162,7 @@ via environment variables.
 [license_img]: https://img.shields.io/badge/License-MIT-blue.svg
 [license_ref]: https://gitlab.com/mbarkhau/myenv/blob/master/LICENSE
 
-[mypy_img]: https://img.shields.io/badge/mypy-100%25-green.svg
+[mypy_img]: https://img.shields.io/badge/mypy-checked-green.svg
 [mypy_ref]: http://mypy-lang.org/
 
 [style_img]: https://img.shields.io/badge/code%20style-%20sjfmt-f71.svg

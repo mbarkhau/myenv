@@ -238,6 +238,12 @@ class BaseEnv(metaclass=_Singleton):
             setattr(self, key, val)
 
     def _varnames(self) -> typ.List[str]:
+        """Create list with names as they are read from os.environ and configs.
+
+        >>> creds = Credentials(user='franz', key='supersecret')
+        >>> creds._varnames()
+        ['CREDENTIALS_USER', 'CREDENTIALS_KEY']
+        """
         prefix = self._environ_prefix or ""
         return [
             (prefix + attrname).upper()
@@ -246,9 +252,20 @@ class BaseEnv(metaclass=_Singleton):
         ]
 
     def _asdict(self) -> typ.Dict[str, typ.Any]:
-        return {field.fname: getattr(self, field.fname) for field in self._iter_fields()}
+        """Create a dict populated with keys/values from annotated fields.
 
-    def __eq__(self, other: EnvType) -> bool:
+        >>> creds = Credentials(user='franz', key='supersecret')
+        >>> creds._asdict()
+        {'user': 'franz', 'key': 'supersecret'}
+        """
+        return {
+            field.fname: getattr(self, field.fname)
+            for field in self._iter_fields()
+            if not field.fname.startswith("_")
+        }
+
+    def __eq__(self, other) -> bool:
+        """Deep equality check for all annotated fields."""
         return self._asdict() == other._asdict()
 
 
@@ -260,3 +277,11 @@ def parse(env_type: typ.Type[EnvType], environ: Environ = os.environ) -> EnvType
     + MyEnv()
     """
     return env_type(environ=environ)
+
+
+class Credentials(BaseEnv):
+    """Helper class used in doc tests."""
+
+    _environ_prefix: str = "CREDENTIALS_"
+    user           : str = "user"
+    key            : str
