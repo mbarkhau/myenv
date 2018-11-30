@@ -4,17 +4,54 @@ import pathlib as pl
 import typing as typ
 
 
-class DBEnv(myenv.BaseEnv):
+# dbenv_cls and testenv_cls are declared to avoid PytestWarning:
+#   cannot collect test class 'TestEnv' because it has a __init__ constructor
 
-    _environ_prefix = "MYAPP_DB_"
 
-    host     : str = "127.0.0.1"
-    port     : int = 5432
-    name     : str = "app_db_v1"
-    user     : str = "app_user"
-    password : str
-    read_only: bool    = True
-    ddl      : pl.Path = (pl.Path(".") / "create_tables.sql")
+def dbenv_cls():
+    class DBEnv(myenv.BaseEnv):
+
+        _environ_prefix = "MYAPP_DB_"
+
+        host     : str = "127.0.0.1"
+        port     : int = 5432
+        name     : str = "app_db_v1"
+        user     : str = "app_user"
+        password : str
+        read_only: bool    = True
+        ddl      : pl.Path = (pl.Path(".") / "create_tables.sql")
+
+        @property
+        def url(self) -> str:
+            db = self
+            return f"postgres://{db.user}:{db.password}@{db.host}:{db.port}/{db.name}"
+
+    return DBEnv
+
+
+def testenv_cls():
+    class TestEnv(myenv.BaseEnv):
+
+        str_val_wo_default  : str
+        str_val             : str = "foo"
+        int_val_wo_default  : int
+        int_val             : int = 123
+        bool_val_wo_default : bool
+        bool_val            : bool = True
+        float_val_wo_default: float
+        float_val           : float = 12.34
+        strs_val_wo_default : typ.List[str]
+        strs_val            : typ.List[str] = ['bar']
+        path_val_wo_default : pl.Path
+        path_val            : pl.Path = pl.Path("file.txt")
+        paths_val_wo_default: typ.List[pl.Path]
+        paths_val           : typ.List[pl.Path] = [
+            pl.Path("file1.txt"),
+            pl.Path("file2.txt"),
+            pl.Path("file3.txt"),
+        ]
+
+    return TestEnv
 
 
 def test_parse():
@@ -29,7 +66,7 @@ def test_parse():
     }
     environ_before = str(os.environ)
 
-    dbenv = DBEnv(environ=environ)
+    dbenv = dbenv_cls()(environ=environ)
 
     environ_after = str(os.environ)
     assert environ_before == environ_after
@@ -45,6 +82,8 @@ def test_parse():
     assert isinstance(dbenv.ddl, pl.Path)
     assert str(dbenv.ddl).endswith("mkdb.sql")
 
+    assert dbenv.url == "postgres://new_user:secret@1.2.3.4:1234/app_db_v2"
+
     attrnames = [attrname for attrname in dbenv.__annotations__ if not attrname.startswith("_")]
     assert len(attrnames) == 7
 
@@ -52,7 +91,7 @@ def test_parse():
 def test_defaults():
     environ_before = str(os.environ)
 
-    dbenv = DBEnv(environ={'MYAPP_DB_PASSWORD': "secret"})
+    dbenv = dbenv_cls()(environ={'MYAPP_DB_PASSWORD': "secret"})
 
     environ_after = str(os.environ)
     assert environ_before == environ_after
@@ -71,37 +110,15 @@ def test_defaults():
     assert len(attrnames) == 7
 
 
-class TestEnv(myenv.BaseEnv):
-
-    str_val_wo_default  : str
-    str_val             : str = "foo"
-    int_val_wo_default  : int
-    int_val             : int = 123
-    bool_val_wo_default : bool
-    bool_val            : bool = True
-    float_val_wo_default: float
-    float_val           : float = 12.34
-    strs_val_wo_default : typ.List[str]
-    strs_val            : typ.List[str] = ['bar']
-    path_val_wo_default : pl.Path
-    path_val            : pl.Path = pl.Path("file.txt")
-    paths_val_wo_default: typ.List[pl.Path]
-    paths_val           : typ.List[pl.Path] = [
-        pl.Path("file1.txt"),
-        pl.Path("file2.txt"),
-        pl.Path("file3.txt"),
-    ]
-
-
 def test_errors():
     try:
-        dbenv = TestEnv(environ={})
+        dbenv = testenv_cls()(environ={})
         assert False
     except KeyError as err:
         assert "STR_VAL_WO_DEFAULT" in str(err)
 
     try:
-        dbenv = TestEnv(environ={'STR_VAL_WO_DEFAULT': "bar"})
+        dbenv = testenv_cls()(environ={'STR_VAL_WO_DEFAULT': "bar"})
         assert False
     except KeyError as err:
         assert "INT_VAL_WO_DEFAULT" in str(err)
@@ -115,7 +132,7 @@ def test_errors():
         'PATH_VAL_WO_DEFAULT' : "fileA.txt",
         'PATHS_VAL_WO_DEFAULT': "fileA.txt:fileB.txt:fileC.txt",
     }
-    dbenv = TestEnv(environ=good_environ)
+    dbenv = testenv_cls()(environ=good_environ)
 
     assert dbenv.str_val             == "foo"
     assert dbenv.str_val_wo_default  == "bar"
@@ -125,7 +142,7 @@ def test_errors():
     try:
         bad_environ = good_environ.copy()
         bad_environ['INT_VAL'] = "abc"
-        dbenv = TestEnv(environ=bad_environ)
+        dbenv = testenv_cls()(environ=bad_environ)
         assert False
     except ValueError as err:
         assert 'INT_VAL' in str(err)
@@ -135,7 +152,7 @@ def test_errors():
     try:
         bad_environ = good_environ.copy()
         bad_environ['INT_VAL'] = "123af"
-        dbenv = TestEnv(environ=bad_environ)
+        dbenv = testenv_cls()(environ=bad_environ)
         assert False
     except ValueError as err:
         assert 'INT_VAL' in str(err)
@@ -145,7 +162,7 @@ def test_errors():
     try:
         bad_environ = good_environ.copy()
         bad_environ['BOOL_VAL'] = "yes"
-        dbenv = TestEnv(environ=bad_environ)
+        dbenv = testenv_cls()(environ=bad_environ)
         assert False
     except ValueError as err:
         assert 'BOOL_VAL' in str(err)
@@ -155,7 +172,7 @@ def test_errors():
     try:
         bad_environ = good_environ.copy()
         bad_environ['FLOAT_VAL'] = "abc.23"
-        dbenv = TestEnv(environ=bad_environ)
+        dbenv = testenv_cls()(environ=bad_environ)
         assert False
     except ValueError as err:
         assert 'FLOAT_VAL' in str(err)

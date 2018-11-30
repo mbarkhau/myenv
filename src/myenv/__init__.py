@@ -5,23 +5,34 @@
 # SPDX-License-Identifier: MIT
 """Environment variable parsing using type annotations.
 
+NOTE: Normally you don't need to declare environ, since the
+default is to just use os.environ. For this doctest however, we
+don't want to manipulate the os.environ and so we create a mock
+instead.
+
 Usage:
 
->>> import os
->>> os.environ['CREDENTIALS_USER'] = "franz"
->>> os.environ['CREDENTIALS_KEY'] = "supersecret"
->>>
+>>> mock_environ = {
+...     'CREDENTIALS_USER': "franz",
+...     'CREDENTIALS_KEY': "supersecret",
+... }
 >>> class Credentials(BaseEnv):
 ...     _environ_prefix = "CREDENTIALS_"
 ...     user : str = "user"
 ...     key : str
 ...
->>> creds = Credentials()
+>>> creds = Credentials(environ=mock_environ)
+>>> creds == Credentials(user='franz', key='supersecret')
+True
 >>> creds.user
 'franz'
 >>> creds.key
 'supersecret'
->>> Credentials() is Credentials()  # singleton
+>>> creds._varnames()
+['CREDENTIALS_USER', 'CREDENTIALS_KEY']
+>>> creds._asdict()
+{'user': 'franz', 'key': 'supersecret'}
+>>> Credentials(environ=mock_environ) is Credentials(environ=mock_environ)
 True
 """
 
@@ -93,14 +104,6 @@ class _Field(typ.NamedTuple):
     fallback: FieldValue
 
 
-def _iter_fields(env_type: typ.Type[EnvType]) -> typ.Iterable[_Field]:
-    prefix = env_type._environ_prefix or ""
-    for fname, ftyp in env_type.__annotations__.items():
-        fallback = getattr(env_type, fname, __fallback_sentinel__)
-        env_key  = (prefix + fname).upper()
-        yield _Field(fname, ftyp, env_key, fallback)
-
-
 def _parse_bool(val: str) -> bool:
     if val.lower() in ("1", "true"):
         return True
@@ -159,7 +162,16 @@ _envmap: EnvMap = {}
 class _Singleton(type):
     def __call__(cls, *args, **kwargs) -> EnvType:
         env_cls = typ.cast(typ.Type[EnvType], cls)
-        environ: Environ = kwargs.get('environ', os.environ)
+
+        environ: Environ
+        if 'environ' in kwargs:
+            environ = kwargs['environ']
+        elif not kwargs:
+            environ = os.environ
+        else:
+            # init with kwargs (not via environ)
+            return env_cls.__new__(env_cls, *args, **kwargs)
+
         envmap_key = (env_cls, id(environ))
 
         if envmap_key not in _envmap:
@@ -177,38 +189,51 @@ class BaseEnv(metaclass=_Singleton):
 
     _environ_prefix: typ.Optional[str] = None
 
-    def __new__(cls: typ.Type[EnvType], **kwargs) -> EnvType:
+    @classmethod
+    def _iter_fields(cls) -> typ.Iterable[_Field]:
+        prefix = cls._environ_prefix or ""
+        for fname, ftyp in cls.__annotations__.items():
+            fallback = getattr(cls, fname, __fallback_sentinel__)
+            env_key  = (prefix + fname).upper()
+            yield _Field(fname, ftyp, env_key, fallback)
+
+    def __new__(cls, *args, **kwargs) -> EnvType:
         """Create a new env instance.
 
         This should not be called from outside of myenv.
         """
-        environ: Environ = kwargs['environ']
         typename = cls.__name__
         init_kwargs: typ.MutableMapping[str, typ.Any] = {}
-        for field in _iter_fields(cls):
-            if field.env_key in environ:
-                try:
-                    raw_env_val = environ[field.env_key]
-                    init_kwargs[field.fname] = _parse_val(raw_env_val, field.ftyp)
-                except ValueError as err:
-                    raise ValueError(
-                        f"Invalid value '{raw_env_val}' for {field.env_key}. "
-                        f"Attepmted to parse '{typename}.{field.fname}' with '{field.ftyp}'.",
-                        err,
+
+        if 'environ' in kwargs:
+            environ: Environ = kwargs['environ']
+
+            for field in cls._iter_fields():
+                if field.env_key in environ:
+                    try:
+                        raw_env_val = environ[field.env_key]
+                        init_kwargs[field.fname] = _parse_val(raw_env_val, field.ftyp)
+                    except ValueError as err:
+                        raise ValueError(
+                            f"Invalid value '{raw_env_val}' for {field.env_key}. "
+                            f"Attepmted to parse '{typename}.{field.fname}' with '{field.ftyp}'.",
+                            err,
+                        )
+                elif field.fallback != __fallback_sentinel__:
+                    init_kwargs[field.fname] = field.fallback
+                else:
+                    raise KeyError(
+                        f"No environment variable {field.env_key} "
+                        + f"found for field {typename}.{field.fname}"
                     )
-            elif field.fallback != __fallback_sentinel__:
-                init_kwargs[field.fname] = field.fallback
-            else:
-                raise KeyError(
-                    f"No environment variable {field.env_key} "
-                    + f"found for field {typename}.{field.fname}"
-                )
+        else:
+            init_kwargs = kwargs
 
         env = super(BaseEnv, cls).__new__(cls)
-        env.__init__(**init_kwargs)
+        env.__init__(*args, **init_kwargs)
         return env
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -220,8 +245,11 @@ class BaseEnv(metaclass=_Singleton):
             if not attrname.startswith("_")
         ]
 
-    def _asdict(self):
-        pass
+    def _asdict(self) -> typ.Dict[str, typ.Any]:
+        return {field.fname: getattr(self, field.fname) for field in self._iter_fields()}
+
+    def __eq__(self, other: EnvType) -> bool:
+        return self._asdict() == other._asdict()
 
 
 def parse(env_type: typ.Type[EnvType], environ: Environ = os.environ) -> EnvType:
