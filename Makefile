@@ -56,6 +56,7 @@ DEV_ENV_PY := $(DEV_ENV)/bin/python
 
 RSA_KEY_PATH := ${HOME}/.ssh/${PKG_NAME}_gitlab_runner_id_rsa
 
+DOCKER_BASE_IMAGE := registry.gitlab.com/mbarkhau/myenv/base:latest
 
 build/envs.txt: requirements/conda.txt
 	@mkdir -p build/;
@@ -421,16 +422,16 @@ build_docker:
 		docker build \
 			--build-arg SSH_PRIVATE_RSA_KEY="$$(cat '${RSA_KEY_PATH}')" \
 			--file docker_base.Dockerfile \
-			--tag $(DOCKER_REGISTRY_URL)/base:latest \
+			--tag $(DOCKER_BASE_IMAGE) \
 			.; \
 	else \
 		docker build \
 			--file docker_base.Dockerfile \
-			--tag $(DOCKER_REGISTRY_URL)/base:latest \
+			--tag $(DOCKER_BASE_IMAGE) \
 			.; \
 	fi
 
-	docker push $(DOCKER_REGISTRY_URL)/base:latest
+	docker push $(DOCKER_BASE_IMAGE)
 
 
 -include makefile.extra.make

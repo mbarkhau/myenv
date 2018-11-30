@@ -1,6 +1,5 @@
 
 PACKAGE_NAME := myenv
-DOCKER_REGISTRY_URL := registry.gitlab.com/mbarkhau/myenv
 
 # This is the python version that is used for:
 # - `make fmt`
