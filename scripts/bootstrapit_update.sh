@@ -212,8 +212,16 @@ if [[ -z "$DOCKER_REGISTRY_DOMAIN" ]]; then
     fi
 fi
 
+if [[ -z "$DOCKER_ROOT_IMAGE" ]]; then
+    DOCKER_ROOT_IMAGE=debian:stable-slim
+fi
+
+if [[ -z "$DOCKER_REGISTRY_URL" ]]; then
+    DOCKER_REGISTRY_URL=${DOCKER_REGISTRY_DOMAIN}/${GIT_REPO_NAMESPACE}/${PACKAGE_NAME}
+fi
+
 if [[ -z "$DOCKER_BASE_IMAGE" ]]; then
-    DOCKER_BASE_IMAGE=frolvlad/alpine-glibc
+    DOCKER_BASE_IMAGE=${DOCKER_REGISTRY_URL}/base:latest
 fi
 
 if [[ -z "$MODULE_NAME" ]]; then
@@ -249,6 +257,8 @@ function format_template()
         | sed "s;\${GIT_REPO_DOMAIN};${GIT_REPO_DOMAIN};g" \
         | sed "s;\${DEFAULT_PYTHON_VERSION};${DEFAULT_PYTHON_VERSION};g" \
         | sed "s;\${DOCKER_REGISTRY_DOMAIN};${DOCKER_REGISTRY_DOMAIN};g" \
+        | sed "s;\${DOCKER_REGISTRY_URL};${DOCKER_REGISTRY_URL};g" \
+        | sed "s;\${DOCKER_ROOT_IMAGE};${DOCKER_ROOT_IMAGE};g" \
         | sed "s;\${DOCKER_BASE_IMAGE};${DOCKER_BASE_IMAGE};g" \
         | sed "s;\${PAGES_DOMAIN};${PAGES_DOMAIN};g" \
         | sed "s;\${PAGES_URL};${PAGES_URL};g" \
@@ -267,11 +277,9 @@ function format_template()
     mv "$1.tmp" "$1";
 }
 
-if [[ ${UPDATE_ALL} ]]; then
+if [[ "${UPDATE_ALL}" -eq "1" ]]; then
     declare -a IGNORE_IF_EXISTS=()
-fi
-
-if [[ -z "${IGNORE_IF_EXISTS[*]}" ]]; then
+elif [[ -z "${IGNORE_IF_EXISTS[*]}" ]]; then
     declare -a IGNORE_IF_EXISTS=(
         "CHANGELOG.md"
         "README.md"
@@ -330,6 +338,7 @@ copy_template makefile;
 copy_template makefile.config.make;
 copy_template makefile.extra.make;
 copy_template docker_base.Dockerfile;
+copy_template Dockerfile;
 
 copy_template requirements/conda.txt;
 copy_template requirements/pypi.txt;
