@@ -16,9 +16,15 @@ Code Quality/CI:
 [![Build Status][build_img]][build_ref]
 
 
-|            Name            |    role    |  since  | until |
-|----------------------------|------------|---------|-------|
-| Manuel Barkhau (@mbarkhau) | maintainer | 2018-09 | -     |
+|      Name      |    role    |  since  | until |
+|----------------|------------|---------|-------|
+| Manuel Barkhau | maintainer | 2018-09 | -     |
+
+
+MyENV parses you're environment variables using type annotations.
+This allows you to configure your app/service as layed out by
+[12factor.net/config](https://12factor.net/config), while keeping
+your code type safe.
 
 
 <!--
@@ -38,12 +44,6 @@ Code Quality/CI:
 - [config/prod.env](#config-prod-env)
 
 [](TOC)
-
-
-MyENV parses you're environment variables using type annotations.
-This allows you to configure your app/service as layed out by
-[12factor.net/config][https://12factor.net/config], while keeping
-your code clean and type safe.
 
 ## Environment Variables and Configuration
 
