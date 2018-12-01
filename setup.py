@@ -25,7 +25,7 @@ install_requires = [
 ]
 
 
-long_description = "\n\n".join((read("README.md"), read("CONTRIBUTING.md"), read("CHANGELOG.md")))
+long_description = "\n\n".join((read("README.md"), read("CHANGELOG.md")))
 
 
 setuptools.setup(
@@ -34,7 +34,7 @@ setuptools.setup(
     author="Manuel Barkhau",
     author_email="mbarkhau@gmail.com",
     url="https://gitlab.com/mbarkhau/myenv",
-    version="201812.3b2",
+    version="201812.3b3",
     keywords="environ variables mypy config configuration",
     description="Type safe environment variables parsing.",
     long_description=long_description,
