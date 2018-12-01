@@ -140,9 +140,9 @@ def _parse_val(val: str, ftype: FieldType) -> FieldValue:
         return float(val)
     elif ftype == pl.Path:
         return pl.Path(val)
-    elif ftype.__name__ == 'List':
+    elif str(ftype).startswith("typing.List["):
         return _parse_list_val(val, ftype)
-    elif ftype.__name__ == 'Set':
+    elif str(ftype).startswith("typing.Set["):
         return set(_parse_list_val(val, ftype))
     elif callable(ftype):
         return ftype(val)
