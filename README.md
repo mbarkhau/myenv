@@ -30,6 +30,13 @@ Code Quality/CI:
 
 [](TOC)
 
+- [Environment Variables and Configuration](#environment-variables-and-configuration)
+  - [Declaration](#declaration)
+  - [Parsing](#parsing)
+- [my_service/cfg.py](#my_service-cfg-py)
+  - [Config Files](#config-files)
+- [config/prod.env](#config-prod-env)
+
 [](TOC)
 
 
@@ -47,7 +54,7 @@ In order of priority, configuration is parsed from
  3. Defaults defined in source code
 
 
-### Declaration
+## Declaration
 
 The `myenv` module provides a convenient way to do this parsing.
 As far as your application code is concerned, it is enough to
@@ -81,7 +88,7 @@ default must be set by an environment variable or configuration
 file, otherwise a `KeyError` will be raised.
 
 
-### Parsing
+## Parsing
 
 To use the above configuration class, simply instanciate it.
 
@@ -102,7 +109,7 @@ it will return a singleton instance, so the `os.environ` and
 configuration files are parsed only once.
 
 
-### Config Files
+## Config Files
 
 When parsing configs, the following paths are parsed if they
 exist. By default the configs are loaded from `${PWD}/config/`,
