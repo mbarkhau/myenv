@@ -1,7 +1,7 @@
 # This file is part of the myenv project
 # https://gitlab.com/mbarkhau/myenv
 #
-# Copyright (c) 2018 Manuel Barkhau (@mbarkhau) - MIT License
+# Copyright (c) 2018 Manuel Barkhau (mbarkhau@gmail.com) - MIT License
 # SPDX-License-Identifier: MIT
 
 import os
@@ -34,9 +34,9 @@ setuptools.setup(
     author="Manuel Barkhau",
     author_email="mbarkhau@gmail.com",
     url="https://gitlab.com/mbarkhau/myenv",
-    version="201812.3b1",
+    version="201812.3b2",
     keywords="environ variables mypy config configuration",
-    description="Environment variable parsing using type annotations.",
+    description="Type safe environment variables parsing.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["myenv"],

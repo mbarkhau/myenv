@@ -5,7 +5,7 @@ AUTHOR_NAME="Manuel Barkhau"
 AUTHOR_CONTACT="mbarkhau@gmail.com"
 
 KEYWORDS="environ variables mypy config configuration"
-DESCRIPTION="Environment Variable Parsing with type annotations."
+DESCRIPTION="Type safe environment variables parsing."
 
 
 LICENSE_ID="MIT"
@@ -16,6 +16,7 @@ GIT_REPO_NAMESPACE="mbarkhau"
 GIT_REPO_DOMAIN="gitlab.com"
 
 DEFAULT_PYTHON_VERSION="python=3.6"
+SUPPORTED_PYTHON_VERSIONS="python=3.6 python=3.7"
 
 # GIT_REPO_URL=https://${GIT_REPO_DOMAIN}/${GIT_REPO_NAMESPACE}/${PACKAGE_NAME}
 
