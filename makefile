@@ -302,13 +302,24 @@ test:
 	@rm -rf "src/__pycache__";
 	@rm -rf "test/__pycache__";
 
+	# First we test the local source tree using the dev environment
 	ENV=$${ENV-dev} PYTHONPATH=src/:vendor/:$$PYTHONPATH \
 		$(DEV_ENV_PY) -m pytest -v \
 		--doctest-modules \
+		--verbose \
 		--cov-report html \
 		--cov-report term \
 		$(shell cd src/ && ls -1 */__init__.py | awk '{ print "--cov "substr($$1,0,index($$1,"/")-1) }') \
 		test/ src/;
+
+	# Next we install the package and run the test suite against it.
+
+	IFS=' ' read -r -a env_paths <<< "$(CONDA_ENV_PATHS)"; \
+	for i in $${!env_paths[@]}; do \
+	    env_py=$${env_paths[i]}/bin/python; \
+	    $${env_py} -m pip install --upgrade .; \
+	    ENV=$${ENV-dev} $${env_py} -m pytest test/; \
+	done;
 
 	@rm -rf ".pytest_cache";
 	@rm -rf "src/__pycache__";
