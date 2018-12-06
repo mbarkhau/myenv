@@ -2,7 +2,7 @@
 # Bootstrapit Project Configuration
 
 AUTHOR_NAME="Manuel Barkhau"
-AUTHOR_CONTACT="mbarkhau@gmail.com"
+AUTHOR_EMAIL="mbarkhau@gmail.com"
 
 KEYWORDS="environ variables mypy config configuration"
 DESCRIPTION="Type safe environment variables parsing."
