@@ -5,7 +5,7 @@ stages:
 
 unit:
   stage: test
-  image: registry.gitlab.com/mbarkhau/myenv/base:latest
+  image: registry.gitlab.com/mbarkhau/myenv/base
   script:
     - make lint
     - make mypy

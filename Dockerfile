@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/mbarkhau/myenv/base:latest
+FROM registry.gitlab.com/mbarkhau/myenv/base
 
 ADD src/ src/
 ADD stubs/ stubs/
