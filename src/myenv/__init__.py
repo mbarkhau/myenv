@@ -1,7 +1,7 @@
 # This file is part of the myenv project
-# https://github.com/mbarkhau/myenv
+# https://gitlab.com/mbarkhau/myenv
 #
-# (C) 2018 Manuel Barkhau (@mbarkhau)
+# Copyright (c) 2018 Manuel Barkhau (mbarkhau@gmail.com) - MIT License
 # SPDX-License-Identifier: MIT
 """Environment variable parsing using type annotations.
 

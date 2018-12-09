@@ -1,5 +1,10 @@
 # [MyENV: Environment Variable Parsing using Type annotations][repo_ref]
 
+MyENV parses you're environment variables using type annotations.
+This allows you to configure your app/service as layed out by
+[12factor.net/config](https://12factor.net/config), while keeping
+your code type safe.
+
 Project/Repo:
 
 [![MIT License][license_img]][license_ref]
@@ -16,15 +21,9 @@ Code Quality/CI:
 [![Build Status][build_img]][build_ref]
 
 
-|      Name      |    role    |  since  | until |
-|----------------|------------|---------|-------|
-| Manuel Barkhau | maintainer | 2018-09 | -     |
-
-
-MyENV parses you're environment variables using type annotations.
-This allows you to configure your app/service as layed out by
-[12factor.net/config](https://12factor.net/config), while keeping
-your code type safe.
+|                 Name                |    role           |  since  | until |
+|-------------------------------------|-------------------|---------|-------|
+| Manuel Barkhau (mbarkhau@gmail.com) | author/maintainer | 2018-09 | -     |
 
 
 <!--
