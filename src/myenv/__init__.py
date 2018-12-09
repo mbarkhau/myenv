@@ -41,7 +41,7 @@ import typing as typ
 import pathlib as pl
 
 
-__version__ = "v201812.0004-beta"
+__version__ = "v201812.0005-beta"
 
 
 Environ = typ.MutableMapping[str, str]
