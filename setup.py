@@ -1,7 +1,7 @@
 # This file is part of the myenv project
 # https://gitlab.com/mbarkhau/myenv
 #
-# Copyright (c) 2018 Manuel Barkhau (mbarkhau@gmail.com) - MIT License
+# Copyright (c) 2019 Manuel Barkhau (mbarkhau@gmail.com) - MIT License
 # SPDX-License-Identifier: MIT
 
 import os
@@ -44,6 +44,8 @@ setuptools.setup(
     install_requires=install_requires,
     python_requires=">=3.6",
     zip_safe=True,
+
+    # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
