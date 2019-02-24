@@ -361,7 +361,7 @@ def __self_test():
     int_val: int = testenv.int_val
     assert int_val == 123
     bool_val: bool = testenv.bool_val
-    assert bool_val == True
+    assert bool_val
     float_val: float = testenv.float_val
     assert float_val == 123.456
     strs_val: typ.List[str] = testenv.strs_val
