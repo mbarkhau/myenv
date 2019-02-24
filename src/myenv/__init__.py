@@ -39,6 +39,7 @@ True
 import os
 import pathlib as pl
 import typing as typ
+import typing_inspect
 
 
 __version__ = "v201902.0007"
@@ -153,9 +154,9 @@ def _parse_val(val: str, ftype: type) -> FieldValue:
             return pl.Path(val)
         else:
             raise TypeError(ftype)
-    elif str(ftype).startswith("typing.List["):
+    elif typing_inspect.get_origin(ftype) in (list, typ.List):
         return _parse_list_val(val, ftype)
-    elif str(ftype).startswith("typing.Set["):
+    elif typing_inspect.get_origin(ftype) in (set, typ.Set):
         return set(_parse_list_val(val, ftype))
     elif callable(ftype):
         return ftype(val)

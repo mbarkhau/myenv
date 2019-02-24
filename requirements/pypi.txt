@@ -10,3 +10,4 @@
 # click
 # typing-extensions
 # mypy-extensions
+typing-inspect
