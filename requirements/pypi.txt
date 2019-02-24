@@ -8,3 +8,5 @@
 # should see if there is a conda package that suits your needs.
 
 # click
+# typing-extensions
+# mypy-extensions

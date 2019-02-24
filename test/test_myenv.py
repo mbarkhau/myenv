@@ -42,6 +42,8 @@ def testenv_cls():
         float_val           : float = 12.34
         strs_val_wo_default : typ.List[str]
         strs_val            : typ.List[str] = ['bar']
+        ints_val_wo_default : typ.Set[int]
+        ints_val            : typ.Set[int] = {1, 2}
         path_val_wo_default : pl.Path
         path_val            : pl.Path = pl.Path("file.txt")
         paths_val_wo_default: typ.List[pl.Path]
@@ -50,6 +52,7 @@ def testenv_cls():
             pl.Path("file2.txt"),
             pl.Path("file3.txt"),
         ]
+        custom_wo_default: lambda val: "".join(reversed(val))
 
     return TestEnv
 
@@ -129,8 +132,10 @@ def test_errors():
         'BOOL_VAL_WO_DEFAULT' : "TRUE",
         'FLOAT_VAL_WO_DEFAULT': "123.456",
         'STRS_VAL_WO_DEFAULT' : "baz:buz",
+        'INTS_VAL_WO_DEFAULT' : "7:89",
         'PATH_VAL_WO_DEFAULT' : "fileA.txt",
         'PATHS_VAL_WO_DEFAULT': "fileA.txt:fileB.txt:fileC.txt",
+        'CUSTOM_WO_DEFAULT'   : "abcd",
     }
     dbenv = testenv_cls()(environ=good_environ)
 
@@ -138,6 +143,9 @@ def test_errors():
     assert dbenv.str_val_wo_default  == "bar"
     assert dbenv.strs_val            == ['bar']
     assert dbenv.strs_val_wo_default == ["baz", 'buz']
+    assert dbenv.ints_val            == {1, 2}
+    assert dbenv.ints_val_wo_default == {7, 89}
+    assert dbenv.custom_wo_default   == "dcba"
 
     try:
         bad_environ = good_environ.copy()
@@ -178,3 +186,7 @@ def test_errors():
         assert 'FLOAT_VAL' in str(err)
         assert "abc.23" in str(err)
         assert "TestEnv.float_val" in str(err)
+
+
+def test_self_test():
+    myenv.__self_test()

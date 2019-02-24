@@ -357,7 +357,7 @@ test:
 
 	IFS=' ' read -r -a env_py_paths <<< "$(CONDA_ENV_BIN_PYTHON_PATHS)"; \
 	for i in $${!env_py_paths[@]}; do \
-		env_py=$${env_py_paths[i]}/bin/python; \
+		env_py=$${env_py_paths[i]}; \
 		$${env_py} -m pip install --upgrade .; \
 		ENV=$${ENV-dev} $${env_py} -m pytest test/; \
 	done;
@@ -499,7 +499,7 @@ bump_version:
 .PHONY: dist_build
 dist_build:
 	$(DEV_ENV_PY) setup.py sdist;
-	$(DEV_ENV_PY) setup.py bdist_wheel --python-tag=$(BDIST_WHEEL_PYTHON_TAG);
+	$(DEV_ENV_PY) setup.py bdist_wheel --python-tag=py36.py37;
 	@rm -rf src/*.egg-info
 
 

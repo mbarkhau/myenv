@@ -37,8 +37,8 @@ True
 """
 
 import os
-import typing as typ
 import pathlib as pl
+import typing as typ
 
 
 __version__ = "v201812.0003-beta"
@@ -60,6 +60,8 @@ def _iter_env_config(env_name: str) -> typ.Iterable[typ.Tuple[str, str]]:
     for config_file in config_files:
         if not config_file.exists():
             continue
+
+        fh: typ.IO[str]
 
         with config_file.open(mode="rt", encoding="utf-8") as fh:
             config_lines = fh.readlines()
@@ -91,17 +93,14 @@ def _init_environ(environ: Environ = None) -> None:
 
 __fallback_sentinel__ = '__fallback_sentinel__'
 
+# NOTE (2018-11-30 mb): I couldn't find out how to express
+#   that a parameter one of a few type itself, rather than
+#   an instance of one of a few types.
+FieldType = typ.Any
 
-FieldType  = typ.Any
-FieldValue = typ.Any
-
-
-class _Field(typ.NamedTuple):
-
-    fname   : str
-    ftyp    : FieldType
-    env_key : str
-    fallback: FieldValue
+# FieldValue = typ.Union[str, int, float, bool, pl.Path]
+FieldValue     = typ.Any
+ListFieldValue = typ.List[typ.Any]
 
 
 def _parse_bool(val: str) -> bool:
@@ -113,33 +112,47 @@ def _parse_bool(val: str) -> bool:
         raise ValueError(val)
 
 
-def _parse_list_val(val: str, ftype: FieldType) -> typ.List[FieldValue]:
+def _parse_list_val(val: str, ftype: FieldType) -> ListFieldValue:
+    maybe_args: typ.Optional[typ.Tuple[type]] = getattr(ftype, '__args__', None)
+    if maybe_args is None:
+        raise TypeError(ftype)
+
+    if len(maybe_args) == 1:
+        member_type: type = maybe_args[0]
+    else:
+        raise TypeError(ftype)
+
     list_strvals = [strval for strval in val.split(os.pathsep)]
-    if ftype.__args__ == (str,):
+
+    if issubclass(member_type, str):
         return list_strvals
-    elif ftype.__args__ == (pl.Path,):
+    elif issubclass(member_type, pl.Path):
         return [pl.Path(listval) for listval in list_strvals]
-    elif ftype.__args__ == (int,):
+    elif issubclass(member_type, int):
         return [int(listval, 10) for listval in list_strvals]
-    elif ftype.__args__ == (float,):
+    elif issubclass(member_type, float):
         return [float(listval) for listval in list_strvals]
-    elif ftype.__args__ == (bool,):
+    elif issubclass(member_type, bool):
         return [_parse_bool(listval) for listval in list_strvals]
     else:
         raise TypeError(ftype)
 
 
-def _parse_val(val: str, ftype: FieldType) -> FieldValue:
-    if ftype == str:
-        return val
-    elif ftype == bool:
-        return _parse_bool(val)
-    elif ftype == int:
-        return int(val, 10)
-    elif ftype == float:
-        return float(val)
-    elif ftype == pl.Path:
-        return pl.Path(val)
+def _parse_val(val: str, ftype: type) -> FieldValue:
+    ftype_type = type(ftype)
+    if ftype_type == type:
+        if issubclass(ftype, str):
+            return val
+        elif issubclass(ftype, bool):
+            return _parse_bool(val)
+        elif issubclass(ftype, int):
+            return int(val, 10)
+        elif issubclass(ftype, float):
+            return float(val)
+        elif issubclass(ftype, pl.Path):
+            return pl.Path(val)
+        else:
+            raise TypeError(ftype)
     elif str(ftype).startswith("typing.List["):
         return _parse_list_val(val, ftype)
     elif str(ftype).startswith("typing.Set["):
@@ -157,6 +170,12 @@ EnvMapKey = typ.Tuple[typ.Type[EnvType], int]
 EnvMap    = typ.Dict[EnvMapKey, EnvType]
 
 _envmap: EnvMap = {}
+
+
+# NOTE (2019-02-24 mb): Could never get this to work,
+#   I thought it was more important to spend time on
+#   test coverage.
+# EnvironKWArgs = mypyext.TypedDict('EnvironKWArgs', {'environ': Environ})
 
 
 class _Singleton(type):
@@ -181,6 +200,17 @@ class _Singleton(type):
         return _envmap[envmap_key]
 
 
+class _Field(typ.NamedTuple):
+
+    fname   : str
+    ftyp    : FieldType
+    env_key : str
+    fallback: FieldValue
+
+
+InitKWArgs = typ.MutableMapping[str, typ.Any]
+
+
 class BaseEnv(metaclass=_Singleton):
     """The main Base class.
 
@@ -197,35 +227,41 @@ class BaseEnv(metaclass=_Singleton):
             env_key  = (prefix + fname).upper()
             yield _Field(fname, ftyp, env_key, fallback)
 
+    @classmethod
+    def _update_kwargs_from_environ(cls, environ: Environ) -> InitKWArgs:
+        typename = cls.__name__
+        init_kwargs: InitKWArgs = {}
+
+        for field in cls._iter_fields():
+            if field.env_key in environ:
+                try:
+                    raw_env_val = environ[field.env_key]
+                    init_kwargs[field.fname] = _parse_val(raw_env_val, field.ftyp)
+                except ValueError as err:
+                    raise ValueError(
+                        f"Invalid value '{raw_env_val}' for {field.env_key}. "
+                        f"Attepmted to parse '{typename}.{field.fname}' with '{field.ftyp}'.",
+                        err,
+                    )
+            elif field.fallback != __fallback_sentinel__:
+                init_kwargs[field.fname] = field.fallback
+            else:
+                raise KeyError(
+                    f"No environment variable {field.env_key} "
+                    + f"found for field {typename}.{field.fname}"
+                )
+
+        return init_kwargs
+
     def __new__(cls, *args, **kwargs) -> EnvType:
         """Create a new env instance.
 
         This should not be called from outside of myenv.
         """
-        typename = cls.__name__
-        init_kwargs: typ.MutableMapping[str, typ.Any] = {}
+        init_kwargs: InitKWArgs
 
         if 'environ' in kwargs:
-            environ: Environ = kwargs['environ']
-
-            for field in cls._iter_fields():
-                if field.env_key in environ:
-                    try:
-                        raw_env_val = environ[field.env_key]
-                        init_kwargs[field.fname] = _parse_val(raw_env_val, field.ftyp)
-                    except ValueError as err:
-                        raise ValueError(
-                            f"Invalid value '{raw_env_val}' for {field.env_key}. "
-                            f"Attepmted to parse '{typename}.{field.fname}' with '{field.ftyp}'.",
-                            err,
-                        )
-                elif field.fallback != __fallback_sentinel__:
-                    init_kwargs[field.fname] = field.fallback
-                else:
-                    raise KeyError(
-                        f"No environment variable {field.env_key} "
-                        + f"found for field {typename}.{field.fname}"
-                    )
+            init_kwargs = cls._update_kwargs_from_environ(kwargs['environ'])
         else:
             init_kwargs = kwargs
 
@@ -264,9 +300,9 @@ class BaseEnv(metaclass=_Singleton):
             if not field.fname.startswith("_")
         }
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Deep equality check for all annotated fields."""
-        return self._asdict() == other._asdict()
+        return isinstance(other, BaseEnv) and self._asdict() == other._asdict()
 
 
 def parse(env_type: typ.Type[EnvType], environ: Environ = os.environ) -> EnvType:
@@ -285,3 +321,54 @@ class Credentials(BaseEnv):
     _environ_prefix: str = "CREDENTIALS_"
     user           : str = "user"
     key            : str
+
+
+def __self_test():
+    """Some code for mypy to type check.
+
+    Since the unittests are not type checked, this code is to make sure
+    that access to the properties of a subclass of BaseEnv are indeed
+    detected to be of the declared type. Considering that these fields are
+    always populated only after runtime type checks (which are opaque to
+    mypy) this bit of code demonstrates that the whole purpose of this
+    library is being satisfied.
+    """
+
+    class _TestEnv(BaseEnv):
+        str_val  : str
+        int_val  : int
+        bool_val : bool
+        float_val: float
+        strs_val : typ.List[str]
+        ints_val : typ.Set[int]
+        path_val : pl.Path
+        paths_val: typ.List[pl.Path]
+
+    environ: Environ = {
+        'STR_VAL'  : "bar",
+        'INT_VAL'  : "123",
+        'BOOL_VAL' : "TRUE",
+        'FLOAT_VAL': "123.456",
+        'STRS_VAL' : "baz:buz",
+        'INTS_VAL' : "7:89",
+        'PATH_VAL' : "fileA.txt",
+        'PATHS_VAL': "fileA.txt:fileB.txt:fileC.txt",
+    }
+
+    testenv = _TestEnv(environ=environ)
+    str_val: str = testenv.str_val
+    assert str_val == "bar"
+    int_val: int = testenv.int_val
+    assert int_val == 123
+    bool_val: bool = testenv.bool_val
+    assert bool_val == True
+    float_val: float = testenv.float_val
+    assert float_val == 123.456
+    strs_val: typ.List[str] = testenv.strs_val
+    assert strs_val == ["baz", "buz"]
+    ints_val: typ.Set[int] = testenv.ints_val
+    assert ints_val == {7, 89}
+    path_val: pl.Path = testenv.path_val
+    assert path_val == pl.Path("fileA.txt")
+    paths_val: typ.List[pl.Path] = testenv.paths_val
+    assert paths_val == [pl.Path("fileA.txt"), pl.Path("fileB.txt"), pl.Path("fileC.txt")]
