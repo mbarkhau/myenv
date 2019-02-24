@@ -9,7 +9,7 @@ Project/Repo:
 
 [![MIT License][license_img]][license_ref]
 [![Supported Python Versions][pyversions_img]][pyversions_ref]
-[![PyCalVer v201902.0006][version_img]][version_ref]
+[![PyCalVer v201902.0007][version_img]][version_ref]
 [![PyPI Version][pypi_img]][pypi_ref]
 [![PyPI Downloads][downloads_img]][downloads_ref]
 
@@ -180,7 +180,7 @@ via environment variables.
 [downloads_img]: https://pepy.tech/badge/myenv/month
 [downloads_ref]: https://pepy.tech/project/myenv
 
-[version_img]: https://img.shields.io/static/v1.svg?label=PyCalVer&message=v201902.0006&color=blue
+[version_img]: https://img.shields.io/static/v1.svg?label=PyCalVer&message=v201902.0007&color=blue
 [version_ref]: https://pypi.org/project/pycalver/
 
 [pyversions_img]: https://img.shields.io/pypi/pyversions/myenv.svg

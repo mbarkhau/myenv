@@ -34,7 +34,7 @@ setuptools.setup(
     author="Manuel Barkhau",
     author_email="mbarkhau@gmail.com",
     url="https://gitlab.com/mbarkhau/myenv",
-    version="201902.6",
+    version="201902.7",
     keywords="environ variables mypy config configuration",
     description="Type safe environment variables parsing.",
     long_description=long_description,
