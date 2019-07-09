@@ -305,6 +305,19 @@ class BaseEnv(metaclass=_Singleton):
         """Deep equality check for all annotated fields."""
         return isinstance(other, BaseEnv) and self._asdict() == other._asdict()
 
+    def __repr__(self) -> str:
+        """Return repr(self)."""
+        kwargs: typ.List[str] = []
+        for field in self._iter_fields():
+            if not field.fname.startswith("_"):
+                field_val_str = repr(getattr(self, field.fname))
+                kwarg         = f"{field.fname}={field_val_str}"
+                kwargs.append(kwarg)
+
+        kwarg_str = ", ".join(kwargs)
+        typename  = self.__class__.__name__
+        return f"{typename}({kwarg_str})"
+
 
 def parse(env_type: typ.Type[EnvType], environ: Environ = os.environ) -> EnvType:
     """Create an instance of an env.

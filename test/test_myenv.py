@@ -18,7 +18,7 @@ def dbenv_cls():
         name     : str = "app_db_v1"
         user     : str = "app_user"
         password : str
-        read_only: bool    = True
+        read_only: bool = True
         ddl      : pl.Path = (pl.Path(".") / "create_tables.sql")
 
         @property
@@ -27,6 +27,18 @@ def dbenv_cls():
             return f"postgres://{db.user}:{db.password}@{db.host}:{db.port}/{db.name}"
 
     return DBEnv
+
+
+def dbenv_environ():
+    return {
+        'MYAPP_DB_HOST'     : "1.2.3.4",
+        'MYAPP_DB_PORT'     : "1234",
+        'MYAPP_DB_NAME'     : "app_db_v2",
+        'MYAPP_DB_USER'     : "new_user",
+        'MYAPP_DB_PASSWORD' : "secret",
+        'MYAPP_DB_READ_ONLY': "0",
+        'MYAPP_DB_DDL'      : "~/mkdb.sql",
+    }
 
 
 def testenv_cls():
@@ -58,15 +70,7 @@ def testenv_cls():
 
 
 def test_parse():
-    environ = {
-        'MYAPP_DB_HOST'     : "1.2.3.4",
-        'MYAPP_DB_PORT'     : "1234",
-        'MYAPP_DB_NAME'     : "app_db_v2",
-        'MYAPP_DB_USER'     : "new_user",
-        'MYAPP_DB_PASSWORD' : "secret",
-        'MYAPP_DB_READ_ONLY': "0",
-        'MYAPP_DB_DDL'      : "~/mkdb.sql",
-    }
+    environ        = dbenv_environ()
     environ_before = str(os.environ)
 
     dbenv = dbenv_cls()(environ=environ)
@@ -190,3 +194,39 @@ def test_errors():
 
 def test_self_test():
     myenv.__self_test()
+
+
+def test_asdict():
+    environ = dbenv_environ()
+    dbenv   = dbenv_cls()(environ=environ)
+
+    d = dbenv._asdict()
+
+    assert d['host'] == "1.2.3.4"
+    assert d['port'] == 1234
+    assert d['name'] == "app_db_v2"
+    assert d['user'] == "new_user"
+    assert d['password'] == "secret"
+    assert d['ddl'] == pl.Path("~/mkdb.sql")
+    assert not d['read_only']
+
+
+def test_repr():
+    repr_vals = [
+        "host=" + repr("1.2.3.4"),
+        "port=" + repr(1234),
+        "name=" + repr("app_db_v2"),
+        "user=" + repr("new_user"),
+        "password=" + repr("secret"),
+        "ddl=" + repr(pl.Path("~/mkdb.sql")),
+        "read_only=False",
+    ]
+
+    environ = dbenv_environ()
+    dbenv   = dbenv_cls()(environ=environ)
+
+    dbenv_repr = repr(dbenv)
+    assert dbenv_repr.startswith("DBEnv(")
+
+    for val in repr_vals:
+        assert val + "," in dbenv_repr or ", " + val + ")" in dbenv_repr

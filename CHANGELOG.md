@@ -1,5 +1,10 @@
 # Changelog for https://gitlab.com/mbarkhau/myenv
 
+## v201907.0008
+
+ - Add __repr__
+
+
 ## v201902.0007
 
  - Packaging updates
